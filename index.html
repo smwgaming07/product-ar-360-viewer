@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Immersive product shopping with 360 degree viewing, AR visualization, and smart placement." />
+  <title>VistaShop — Immersive Shopping</title>
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <style>
+    :root { --ink:#172033; --muted:#68738a; --brand:#635bff; --brand-dark:#493fe0; --surface:#fff; --soft:#f4f6fb; --line:#e8ebf2; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; color:var(--ink); background:linear-gradient(135deg,#f8faff,#eef0ff); }
+    button { font:inherit; cursor:pointer; border:0; }
+    .nav { max-width:1180px; margin:auto; padding:22px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .logo { font-size:1.35rem; font-weight:800; letter-spacing:-.04em; } .logo span { color:var(--brand); }
+    .cart { background:#fff; border:1px solid var(--line); border-radius:12px; padding:10px 14px; color:var(--ink); }
+    .cart b { background:var(--brand); color:#fff; padding:2px 7px; border-radius:99px; margin-left:5px; }
+    .page { max-width:1180px; margin:15px auto 60px; padding:0 24px; }
+    .hero { display:grid; grid-template-columns:1fr 1.1fr; gap:42px; align-items:center; }
+    .eyebrow { color:var(--brand); text-transform:uppercase; letter-spacing:.14em; font-size:.76rem; font-weight:800; }
+    h1 { font-size:clamp(2.5rem,6vw,5rem); line-height:.98; letter-spacing:-.07em; margin:15px 0 22px; }
+    .intro { color:var(--muted); line-height:1.7; font-size:1.08rem; max-width:500px; }
+    .price { font-size:1.8rem; font-weight:800; margin:26px 0; }
+    .actions { display:flex; gap:12px; flex-wrap:wrap; }
+    .primary,.secondary { padding:14px 19px; border-radius:12px; font-weight:750; transition:.2s; }
+    .primary { color:#fff; background:var(--brand); box-shadow:0 9px 20px #635bff33; } .primary:hover { background:var(--brand-dark); transform:translateY(-2px); }
+    .secondary { background:#fff; color:var(--brand); border:1px solid #dcdafe; } .secondary:hover { background:#f2f1ff; }
+    .viewer-wrap { background:#fff; border:1px solid var(--line); border-radius:28px; padding:17px; box-shadow:0 24px 60px #343b6a18; }
+    .viewer { position:relative; min-height:450px; display:grid; place-items:center; overflow:hidden; border-radius:20px; background:radial-gradient(circle at 50% 35%,#eef0ff,#dfe3f4); }
+    .product-art { width:min(75%,340px); aspect-ratio:1/1.25; border-radius:45% 45% 30% 30%; background:linear-gradient(110deg,#161a2d 10%,#636b99 42%,#101323 75%); box-shadow:25px 28px 23px #26304e44; position:relative; transition:transform .12s ease; }
+    .product-art:before { content:"VISTA"; position:absolute; top:43%; left:16%; right:16%; text-align:center; color:#fff; font-size:1.8rem; letter-spacing:.12em; font-weight:900; border:2px solid #ffffff66; padding:10px 2px; transform:skewY(-5deg); }
+    .product-art:after { content:""; position:absolute; width:120%; height:20px; left:-10%; bottom:-18px; border-radius:50%; background:#1b203744; filter:blur(9px); }
+    .hint { position:absolute; top:18px; left:18px; color:#59627b; background:#ffffffcc; padding:8px 11px; border-radius:9px; font-size:.82rem; }
+    .badge { position:absolute; right:18px; top:18px; background:#fff; padding:8px 11px; border-radius:9px; font-size:.8rem; font-weight:750; color:#16a06d; }
+    .controls { display:flex; gap:8px; justify-content:center; padding:15px 0 4px; }
+    .dot { width:9px; height:9px; border-radius:50%; background:#ccd1df; } .dot.active { background:var(--brand); transform:scale(1.3); }
+    .feature-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:55px; }
+    .feature { background:#fff; padding:22px; border:1px solid var(--line); border-radius:18px; } .feature strong { display:block; margin:10px 0 7px; } .feature p { color:var(--muted); font-size:.9rem; line-height:1.5; margin:0; }
+    .icon { font-size:1.7rem; }
+    dialog { border:0; border-radius:20px; padding:0; width:min(92vw,540px); box-shadow:0 20px 80px #18204455; } dialog::backdrop { background:#161b3270; backdrop-filter:blur(4px); }
+    .modal-head { padding:20px 22px; display:flex; justify-content:space-between; border-bottom:1px solid var(--line); } .close { background:var(--soft); border-radius:8px; width:32px; height:32px; }
+    .modal-body { padding:22px; } model-viewer { width:100%; height:360px; background:#f0f2fb; border-radius:14px; }
+    .ar-note { margin:14px 0 0; color:var(--muted); font-size:.9rem; line-height:1.5; }
+    .toast { position:fixed; bottom:24px; left:50%; transform:translate(-50%,20px); background:#172033; color:#fff; padding:13px 18px; border-radius:10px; opacity:0; transition:.25s; pointer-events:none; } .toast.show { opacity:1; transform:translate(-50%,0); }
+    @media (max-width:760px) { .hero { grid-template-columns:1fr; gap:25px; } .viewer { min-height:360px; } .feature-grid { grid-template-columns:1fr; margin-top:32px; } h1 { font-size:3.4rem; } }
+  </style>
+</head>
+<body>
+  <header class="nav"><div class="logo">Vista<span>Shop</span></div><button class="cart" id="cart">Cart <b id="cartCount">0</b></button></header>
+  <main class="page">
+    <section class="hero">
+      <div>
+        <div class="eyebrow">The future of shopping</div>
+        <h1>See it.<br><span style="color:var(--brand)">Place it.</span><br>Love it.</h1>
+        <p class="intro">Explore products in 360 degrees and place them in your own space with augmented reality. Double-tap anywhere to let smart placement find the perfect spot.</p>
+        <div class="price">$129.00</div>
+        <div class="actions"><button class="primary" id="add">Add to cart</button><button class="secondary" id="arButton">▣ View in AR</button></div>
+      </div>
+      <div class="viewer-wrap">
+        <div class="viewer" id="viewer" aria-label="Interactive 360 degree product viewer">
+          <div class="hint">↔ Drag to rotate · Double-tap to place</div><div class="badge">● In stock</div><div class="product-art" id="product"></div>
+        </div>
+        <div class="controls" aria-label="Product rotation position"><i class="dot active"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>
+      </div>
+    </section>
+    <section class="feature-grid"><article class="feature"><div class="icon">↻</div><strong>360° product view</strong><p>Drag across the product to inspect every detail from every angle.</p></article><article class="feature"><div class="icon">⌂</div><strong>Smart AR placement</strong><p>See how it looks in your room before you buy with one tap.</p></article><article class="feature"><div class="icon">✦</div><strong>AI-assisted shopping</strong><p>Double-tap to automatically anchor the product on the best detected surface.</p></article></section>
+  </main>
+  <dialog id="arDialog"><div class="modal-head"><strong>Preview in augmented reality</strong><button class="close" id="close" aria-label="Close">×</button></div><div class="modal-body"><model-viewer src="https://modelviewer.dev/shared-assets/models/Astronaut.glb" camera-controls auto-rotate ar ar-modes="webxr scene-viewer quick-look" shadow-intensity="1" alt="3D product preview"><button slot="ar-button" class="primary" style="margin:16px">Open AR camera</button></model-viewer><p class="ar-note">On a supported mobile device, tap <b>Open AR camera</b>. In this demo, the astronaut is a placeholder—replace the <code>src</code> with your product's .glb or .usdz model.</p></div></dialog>
+  <div class="toast" id="toast"></div>
+  <script>
+    const viewer = document.querySelector('#viewer'), product = document.querySelector('#product');
+    const dots = [...document.querySelectorAll('.dot')]; let dragging = false, startX = 0, rotation = 0, count = 0;
+    function rotate(x) { rotation += x; product.style.transform = `perspective(700px) rotateY(${rotation}deg) rotateX(1deg)`; dots.forEach((dot, i) => dot.classList.toggle('active', i === Math.floor(((rotation % 360 + 360) % 360) / 72))); }
+    viewer.addEventListener('pointerdown', e => { dragging=true; startX=e.clientX; viewer.setPointerCapture(e.pointerId); });
+    viewer.addEventListener('pointermove', e => { if (dragging) { rotate((e.clientX-startX)*.55); startX=e.clientX; } });
+    viewer.addEventListener('pointerup', () => dragging=false); viewer.addEventListener('pointercancel', () => dragging=false);
+    viewer.addEventListener('dblclick', () => { rotate(Math.round(-rotation / 15) * 15); showToast('AI placed the product on the best available surface ✨'); });
+    const dialog = document.querySelector('#arDialog'); document.querySelector('#arButton').onclick=()=>dialog.showModal(); document.querySelector('#close').onclick=()=>dialog.close();
+    document.querySelector('#add').onclick=()=>{ count++; document.querySelector('#cartCount').textContent=count; showToast('Product added to your cart'); };
+    document.querySelector('#cart').onclick=()=>showToast(count ? `${count} item${count>1?'s':''} in your cart` : 'Your cart is empty');
+    function showToast(message) { const toast=document.querySelector('#toast'); toast.textContent=message; toast.classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer=setTimeout(()=>toast.classList.remove('show'),2600); }
+  </script>
+</body>
+</html>
